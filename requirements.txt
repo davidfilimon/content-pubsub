@@ -1,0 +1,2 @@
+# No external dependencies required.
+# The project includes a small protobuf-wire binary encoder/decoder for Publication messages.

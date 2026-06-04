@@ -1,0 +1,84 @@
+[
+  {
+    "subscriptions": 10000,
+    "duration_configured_seconds": 180.0,
+    "elapsed_real_seconds": 18.25959138799999,
+    "publisher_rate_per_second": 25.0,
+    "equality_ratio_on_company_field": 1.0,
+    "published_publications": 4500,
+    "successful_publications": 4500,
+    "total_delivered_notifications": 5626212,
+    "mean_delivery_latency_ms": 2.0858462447701935,
+    "median_delivery_latency_ms": 1.6492695,
+    "p95_delivery_latency_ms": 3.104454,
+    "matching_rate": 0.12502693333333334,
+    "matching_rate_percent": 12.502693333333333,
+    "broker_loads": {
+      "broker-1": {
+        "alive": true,
+        "local_subscriptions": 3333,
+        "replica_subscriptions": 3333
+      },
+      "broker-2": {
+        "alive": true,
+        "local_subscriptions": 3334,
+        "replica_subscriptions": 3333
+      },
+      "broker-3": {
+        "alive": true,
+        "local_subscriptions": 3333,
+        "replica_subscriptions": 3334
+      }
+    },
+    "deliveries_by_subscriber": {
+      "subscriber-1": 1874599,
+      "subscriber-2": 1878548,
+      "subscriber-3": 1873065
+    },
+    "failure_demo": false,
+    "failure_triggered": false,
+    "recovery_triggered": false,
+    "replica_notifications": 0
+  },
+  {
+    "subscriptions": 10000,
+    "duration_configured_seconds": 180.0,
+    "elapsed_real_seconds": 56.090972213999976,
+    "publisher_rate_per_second": 25.0,
+    "equality_ratio_on_company_field": 0.25,
+    "published_publications": 4500,
+    "successful_publications": 4500,
+    "total_delivered_notifications": 30772309,
+    "mean_delivery_latency_ms": 5.814336278993267,
+    "median_delivery_latency_ms": 3.801016,
+    "p95_delivery_latency_ms": 7.264417,
+    "matching_rate": 0.6838290888888889,
+    "matching_rate_percent": 68.38290888888889,
+    "broker_loads": {
+      "broker-1": {
+        "alive": true,
+        "local_subscriptions": 3334,
+        "replica_subscriptions": 3333
+      },
+      "broker-2": {
+        "alive": true,
+        "local_subscriptions": 3333,
+        "replica_subscriptions": 3334
+      },
+      "broker-3": {
+        "alive": true,
+        "local_subscriptions": 3333,
+        "replica_subscriptions": 3333
+      }
+    },
+    "deliveries_by_subscriber": {
+      "subscriber-1": 10324976,
+      "subscriber-2": 10330415,
+      "subscriber-3": 10116918
+    },
+    "failure_demo": false,
+    "failure_triggered": false,
+    "recovery_triggered": false,
+    "replica_notifications": 0
+  }
+]

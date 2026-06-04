@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "content-pubsub-overlay"
+version = "1.0.0"
+description = "Content-based publish/subscribe system with broker overlay, balanced subscription routing, evaluation and binary protobuf-wire serialization."
+requires-python = ">=3.10"
+authors = [{name = "Student project"}]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
