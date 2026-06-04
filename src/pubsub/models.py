@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 import random
 import time
 import uuid
 
+from .theme_generator import COMPANIES, DATES
 
-COMPANIES = ["Google", "Amazon", "Microsoft", "Tesla", "Apple", "Nvidia", "BMW", "Dacia"]
-CITIES = ["Bucuresti", "Constanta", "Iasi", "Cluj", "Brasov", "Timisoara", "Sibiu"]
-CATEGORIES = ["tech", "auto", "finance", "robotics", "energy", "retail"]
 SOURCES = ["publisher-a", "publisher-b"]
 
 
@@ -18,9 +16,10 @@ class Publication:
     publication_id: int
     created_ns: int
     company: str
-    city: str
     value: float
-    category: str
+    drop: float
+    variation: float
+    date: str
     source: str
 
     @staticmethod
@@ -29,9 +28,10 @@ class Publication:
             publication_id=publication_id,
             created_ns=time.perf_counter_ns(),
             company=random.choice(COMPANIES),
-            city=random.choice(CITIES),
-            value=round(random.uniform(0.0, 1000.0), 3),
-            category=random.choice(CATEGORIES),
+            value=round(random.uniform(10.0, 200.0), 1),
+            drop=round(random.uniform(0.0, 50.0), 1),
+            variation=round(random.uniform(0.0, 5.0), 2),
+            date=random.choice(DATES),
             source=source or random.choice(SOURCES),
         )
 
@@ -40,11 +40,21 @@ class Publication:
             "publication_id": self.publication_id,
             "created_ns": self.created_ns,
             "company": self.company,
-            "city": self.city,
             "value": self.value,
-            "category": self.category,
+            "drop": self.drop,
+            "variation": self.variation,
+            "date": self.date,
             "source": self.source,
         }
+
+    def as_theme_text(self) -> str:
+        return (
+            f'{{(company,"{self.company}");'
+            f"(value,{self.value:.1f});"
+            f"(drop,{self.drop:.1f});"
+            f"(variation,{self.variation:.2f});"
+            f"(date,{self.date})}}"
+        )
 
 
 @dataclass(frozen=True)
@@ -88,13 +98,6 @@ class Subscription:
         equality_ratio: float = 1.0,
         simple: bool = True,
     ) -> "Subscription":
-        """
-        Generate a content-based subscription.
-
-        For evaluation we use a controlled field, `company`, and vary how often the
-        operator on that field is equality. This directly supports the 100% vs 25%
-        matching-rate comparison requested in the project statement.
-        """
         equality_ratio = max(0.0, min(1.0, equality_ratio))
         company = random.choice(COMPANIES)
         if random.random() < equality_ratio:
@@ -105,14 +108,14 @@ class Subscription:
         conditions = [company_condition]
 
         if not simple:
-            # Optional extra filters used by the demo. Evaluation keeps subscriptions simple.
             if random.random() < 0.5:
-                conditions.append(Condition("city", "=", random.choice(CITIES)))
+                conditions.append(Condition("value", random.choice([">=", "<="]), round(random.uniform(10.0, 200.0), 1)))
             if random.random() < 0.5:
-                op = random.choice([">=", "<="])
-                conditions.append(Condition("value", op, round(random.uniform(100.0, 900.0), 3)))
+                conditions.append(Condition("drop", random.choice([">=", "<="]), round(random.uniform(0.0, 50.0), 1)))
             if random.random() < 0.35:
-                conditions.append(Condition("category", "=", random.choice(CATEGORIES)))
+                conditions.append(Condition("variation", random.choice([">=", "<="]), round(random.uniform(0.0, 5.0), 2)))
+            if random.random() < 0.35:
+                conditions.append(Condition("date", random.choice(["=", "!="]), random.choice(DATES)))
 
         return Subscription(
             subscription_id=f"{subscriber_id}-sub-{index}-{uuid.uuid4().hex[:8]}",
@@ -124,7 +127,6 @@ class Subscription:
         return all(condition.matches(publication) for condition in self.conditions)
 
     def primary_condition(self) -> Condition:
-        # Prefer equality conditions because they are more selective for routing.
         for condition in self.conditions:
             if condition.op == "=":
                 return condition

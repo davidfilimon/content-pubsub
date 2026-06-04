@@ -3,10 +3,11 @@ from __future__ import annotations
 import random
 from pprint import pprint
 
-from .models import Subscription
 from .overlay import BrokerOverlay
 from .publisher import PublisherNode
+from .protobuf_codec import serialize_publication
 from .subscriber import SubscriberNode
+from .theme_adapter import generate_theme_subscriptions
 
 
 def run_demo() -> None:
@@ -17,32 +18,38 @@ def run_demo() -> None:
     for subscriber in subscribers:
         overlay.add_subscriber(subscriber)
 
-    print("=== Registering random content-based subscriptions ===")
-    for subscriber in subscribers:
-        for index in range(5):
-            entry = random.choice(overlay.broker_ids)
-            subscription = Subscription.random(subscriber.subscriber_id, index, equality_ratio=0.65, simple=False)
-            result = overlay.register_subscription(entry, subscription)
-            print(
-                f"{subscription.subscription_id}: {subscription.as_text()} | "
-                f"entry={result.entry_broker} -> target={result.target_broker}, "
-                f"backup={result.backup_broker}, path={result.path}"
-            )
+    print("=== Registering generated content-based subscriptions from theme generator ===")
+    generated_subscriptions = generate_theme_subscriptions(
+        count=15,
+        subscriber_ids=[subscriber.subscriber_id for subscriber in subscribers],
+        equality_ratio=0.65,
+        num_threads=1,
+    )
+    for subscription in generated_subscriptions:
+        entry = random.choice(overlay.broker_ids)
+        result = overlay.register_subscription(entry, subscription)
+        print(
+            f"{subscription.subscription_id}: {subscription.as_text()} | "
+            f"entry={result.entry_broker} -> target={result.target_broker}, "
+            f"backup={result.backup_broker}, path={result.path}"
+        )
 
     print("\nBroker loads after registration:")
     pprint(overlay.broker_loads())
 
     publishers = [PublisherNode("publisher-a"), PublisherNode("publisher-b")]
 
-    print("\n=== Publishing binary protobuf-wire messages ===")
+    print("\n=== Publishing binary protobuf-wire messages generated from theme generator ===")
     for _ in range(10):
         publisher = random.choice(publishers)
         entry = random.choice(overlay.broker_ids)
-        payload = publisher.generate_binary_publication()
+        publication = publisher.generate_publication()
+        payload = serialize_publication(publication)
         result = overlay.publish_binary(entry, payload)
         print(
-            f"publication={result.publication_id} entry={result.entry_broker} "
-            f"visited={result.visited_brokers} delivered={result.delivered_notifications}"
+            f"publication={publication.as_theme_text()} source={publication.source} "
+            f"entry={result.entry_broker} visited={result.visited_brokers} "
+            f"delivered={result.delivered_notifications}"
         )
 
     print("\nDeliveries by subscriber:")
@@ -53,11 +60,13 @@ def run_demo() -> None:
     for _ in range(5):
         publisher = random.choice(publishers)
         entry = random.choice(overlay.broker_ids)
-        result = overlay.publish_binary(entry, publisher.generate_binary_publication())
+        publication = publisher.generate_publication()
+        payload = serialize_publication(publication)
+        result = overlay.publish_binary(entry, payload)
         print(
-            f"publication={result.publication_id} entry={result.entry_broker} "
-            f"visited={result.visited_brokers} delivered={result.delivered_notifications} "
-            f"replica_matches={result.matched_on_replicas}"
+            f"publication={publication.as_theme_text()} source={publication.source} "
+            f"entry={result.entry_broker} visited={result.visited_brokers} "
+            f"delivered={result.delivered_notifications} replica_matches={result.matched_on_replicas}"
         )
 
     print("\nFinal deliveries by subscriber:")

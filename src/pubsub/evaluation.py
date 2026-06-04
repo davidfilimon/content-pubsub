@@ -8,10 +8,11 @@ import time
 from pathlib import Path
 from typing import Dict, List
 
-from .models import Subscription
 from .overlay import BrokerOverlay
+from .protobuf_codec import serialize_publication
 from .publisher import PublisherNode
 from .subscriber import SubscriberNode
+from .theme_adapter import generate_theme_subscriptions
 
 
 def percentile(values: List[float], p: float) -> float:
@@ -31,15 +32,15 @@ def build_overlay(
     for subscriber in subscribers:
         overlay.add_subscriber(subscriber)
 
-    for i in range(subscriptions):
-        subscriber = subscribers[i % len(subscribers)]
+    generated_subscriptions = generate_theme_subscriptions(
+        count=subscriptions,
+        subscriber_ids=[subscriber.subscriber_id for subscriber in subscribers],
+        equality_ratio=equality_ratio,
+        num_threads=4,
+    )
+
+    for subscription in generated_subscriptions:
         entry_broker = random.choice(overlay.broker_ids)
-        subscription = Subscription.random(
-            subscriber.subscriber_id,
-            index=i,
-            equality_ratio=equality_ratio,
-            simple=True,
-        )
         overlay.register_subscription(entry_broker, subscription)
 
     return overlay
@@ -65,6 +66,7 @@ def run_single_evaluation(
     published = 0
     failure_triggered = False
     recovery_triggered = False
+    generated_publication_lines = []
 
     for idx in range(total_publications_target):
         now_elapsed = time.perf_counter() - start
@@ -86,7 +88,15 @@ def run_single_evaluation(
 
         publisher = random.choice(publishers)
         entry = random.choice(overlay.broker_ids)
-        result = overlay.publish_binary(entry, publisher.generate_binary_publication())
+
+        publication = publisher.generate_publication()
+        generated_publication_lines.append(
+            f"{idx + 1};source={publication.source};entry={entry};"
+            f"{publication.as_theme_text()}\n"
+        )
+
+        payload = serialize_publication(publication)
+        result = overlay.publish_binary(entry, payload)
         published += 1
         total_notifications += result.delivered_notifications
         replica_notifications += result.matched_on_replicas
@@ -100,6 +110,13 @@ def run_single_evaluation(
                 time.sleep(remaining)
 
     elapsed = time.perf_counter() - start
+
+    pub_file = (
+        Path("results") / f"generated_publications_eq_{int(equality_ratio * 100)}.txt"
+    )
+    pub_file.parent.mkdir(parents=True, exist_ok=True)
+    pub_file.write_text("".join(generated_publication_lines), encoding="utf-8")
+
     deliveries = list(overlay.all_deliveries())
     latencies = [delivery.latency_ms for delivery in deliveries]
     mean_latency = statistics.fmean(latencies) if latencies else 0.0

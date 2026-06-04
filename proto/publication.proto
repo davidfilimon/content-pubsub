@@ -1,16 +1,12 @@
 syntax = "proto3";
 
-package pubsub;
-
-// Schema used by src/pubsub/protobuf_codec.py.
-// The encoder/decoder implements the protobuf wire format directly,
-// so the project can run without protoc or external dependencies.
-message PublicationProto {
+message Publication {
   uint64 publication_id = 1;
   uint64 created_ns = 2;
   string company = 3;
-  string city = 4;
-  double value = 5;
-  string category = 6;
-  string source = 7;
+  double value = 4;
+  double drop = 5;
+  double variation = 6;
+  string date = 7;
+  string source = 8;
 }

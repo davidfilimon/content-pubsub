@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from .models import Publication
 from .protobuf_codec import serialize_publication
+from .theme_adapter import generate_theme_publications
 
 
 @dataclass
@@ -12,9 +13,9 @@ class PublisherNode:
     sequence: int = 0
 
     def generate_publication(self) -> Publication:
+        publication = generate_theme_publications(1, source=self.publisher_id, start_sequence=self.sequence)[0]
         self.sequence += 1
-        numeric_id = abs(hash((self.publisher_id, self.sequence))) % (2**63)
-        return Publication.random(publication_id=numeric_id, source=self.publisher_id)
+        return publication
 
     def generate_binary_publication(self) -> bytes:
         return serialize_publication(self.generate_publication())

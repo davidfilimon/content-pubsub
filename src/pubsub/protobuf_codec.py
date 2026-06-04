@@ -3,16 +3,15 @@ from __future__ import annotations
 """
 Small Protocol Buffers wire-format codec for Publication messages.
 
-This avoids external build steps while still sending the publisher -> broker payload
-as a compact binary message following the .proto schema in proto/publication.proto.
-Supported fields:
+Binary schema used for publisher -> broker:
   1 uint64 publication_id
   2 uint64 created_ns
   3 string company
-  4 string city
-  5 double value
-  6 string category
-  7 string source
+  4 double value
+  5 double drop
+  6 double variation
+  7 string date
+  8 string source
 """
 
 import struct
@@ -74,22 +73,21 @@ def _double_field(field_number: int, value: float) -> bytes:
 
 
 def serialize_publication(publication: Publication) -> bytes:
-    """Serialize a Publication using protobuf binary wire format."""
     return b"".join(
         [
             _uint64_field(1, publication.publication_id),
             _uint64_field(2, publication.created_ns),
             _string_field(3, publication.company),
-            _string_field(4, publication.city),
-            _double_field(5, publication.value),
-            _string_field(6, publication.category),
-            _string_field(7, publication.source),
+            _double_field(4, publication.value),
+            _double_field(5, publication.drop),
+            _double_field(6, publication.variation),
+            _string_field(7, publication.date),
+            _string_field(8, publication.source),
         ]
     )
 
 
 def deserialize_publication(data: bytes) -> Publication:
-    """Deserialize a Publication from protobuf binary wire format."""
     pos = 0
     fields: Dict[int, object] = {}
 
@@ -115,7 +113,7 @@ def deserialize_publication(data: bytes) -> Publication:
         else:
             raise ValueError(f"unsupported wire type: {wire_type}")
 
-    required = [1, 2, 3, 4, 5, 6, 7]
+    required = [1, 2, 3, 4, 5, 6, 7, 8]
     missing = [field for field in required if field not in fields]
     if missing:
         raise ValueError(f"missing required Publication fields: {missing}")
@@ -124,8 +122,9 @@ def deserialize_publication(data: bytes) -> Publication:
         publication_id=int(fields[1]),
         created_ns=int(fields[2]),
         company=str(fields[3]),
-        city=str(fields[4]),
-        value=float(fields[5]),
-        category=str(fields[6]),
-        source=str(fields[7]),
+        value=float(fields[4]),
+        drop=float(fields[5]),
+        variation=float(fields[6]),
+        date=str(fields[7]),
+        source=str(fields[8]),
     )
