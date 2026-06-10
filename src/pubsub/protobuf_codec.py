@@ -1,19 +1,5 @@
 from __future__ import annotations
 
-"""
-Small Protocol Buffers wire-format codec for Publication messages.
-
-Binary schema used for publisher -> broker:
-  1 uint64 publication_id
-  2 uint64 created_ns
-  3 string company
-  4 double value
-  5 double drop
-  6 double variation
-  7 string date
-  8 string source
-"""
-
 import struct
 from typing import Dict, Tuple
 
