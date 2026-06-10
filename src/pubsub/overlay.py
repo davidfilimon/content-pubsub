@@ -31,21 +31,16 @@ class PublishResult:
 
 
 class BrokerOverlay:
-    """
-    Ring overlay of broker nodes.
-
-    Subscriptions are routed to one target broker selected by the advanced router.
-    A backup replica is stored on the next broker in the ring. Publications are
-    injected into one broker and propagated through the overlay, so each broker
-    performs only local partial matching instead of one centralized match.
-    """
-
     def __init__(self, broker_ids: Iterable[str]) -> None:
-        self.brokers: Dict[str, BrokerNode] = {broker_id: BrokerNode(broker_id) for broker_id in broker_ids}
+        self.brokers: Dict[str, BrokerNode] = {
+            broker_id: BrokerNode(broker_id) for broker_id in broker_ids
+        }
         if len(self.brokers) < 2:
             raise ValueError("Overlay requires at least two brokers")
         self.broker_ids = list(self.brokers.keys())
-        self.router = BalancedRendezvousRouter(self.broker_ids, candidate_count=min(2, len(self.broker_ids)))
+        self.router = BalancedRendezvousRouter(
+            self.broker_ids, candidate_count=min(2, len(self.broker_ids))
+        )
         self.subscribers: Dict[str, SubscriberNode] = {}
         self.neighbors: Dict[str, List[str]] = self._build_ring(self.broker_ids)
         self.registrations: List[RegistrationResult] = []
@@ -66,7 +61,9 @@ class BrokerOverlay:
     def add_subscriber(self, subscriber: SubscriberNode) -> None:
         self.subscribers[subscriber.subscriber_id] = subscriber
 
-    def shortest_path(self, start: str, end: str, include_failed: bool = True) -> List[str]:
+    def shortest_path(
+        self, start: str, end: str, include_failed: bool = True
+    ) -> List[str]:
         if start == end:
             return [start]
         visited = {start}
@@ -93,7 +90,9 @@ class BrokerOverlay:
                 return candidate
         raise RuntimeError("No alive broker available")
 
-    def register_subscription(self, entry_broker: str, subscription: Subscription) -> RegistrationResult:
+    def register_subscription(
+        self, entry_broker: str, subscription: Subscription
+    ) -> RegistrationResult:
         if subscription.subscriber_id not in self.subscribers:
             self.add_subscriber(SubscriberNode(subscription.subscriber_id))
         target = self.router.choose_target(subscription)
@@ -144,13 +143,17 @@ class BrokerOverlay:
                 continue
             visited_order.append(broker_id)
 
-            local_deliveries = broker.match_local(publication, self.subscribers, path, use_replicas=False)
+            local_deliveries = broker.match_local(
+                publication, self.subscribers, path, use_replicas=False
+            )
             delivered += len(local_deliveries)
 
             # If any neighbor is down, this broker may contain replica subscriptions
             # that cover the failed node. Duplicate protection exists at subscriber level.
             if any(not self.brokers[n].alive for n in self.neighbors[broker_id]):
-                replica_deliveries = broker.match_local(publication, self.subscribers, path, use_replicas=True)
+                replica_deliveries = broker.match_local(
+                    publication, self.subscribers, path, use_replicas=True
+                )
                 delivered += len(replica_deliveries)
                 replica_delivered += len(replica_deliveries)
 
@@ -177,7 +180,10 @@ class BrokerOverlay:
         }
 
     def subscriber_delivery_counts(self) -> Dict[str, int]:
-        return {sid: subscriber.deliveries_count for sid, subscriber in self.subscribers.items()}
+        return {
+            sid: subscriber.deliveries_count
+            for sid, subscriber in self.subscribers.items()
+        }
 
     def all_deliveries(self):
         for subscriber in self.subscribers.values():
